@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AI Virtual Phone</string>
+    <string name="title_activity_main">AI Virtual Phone</string>
+    <string name="package_name">com.vigil.aivirtualphone</string>
+    <string name="custom_url_scheme">com.vigil.aivirtualphone</string>
+</resources>

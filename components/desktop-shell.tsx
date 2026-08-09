@@ -2,6 +2,10 @@
 
 import { Component, memo, useCallback, useEffect, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
 
+import { Capacitor } from "@capacitor/core";
+import { App as CapApp } from "@capacitor/app";
+import { resolveAndroidBackAction } from "@/lib/android-back-policy";
+
 import { updateStatusBarTone } from "@/lib/bg-tone";
 import { startDiaryEntryTimerService, stopDiaryEntryTimerService } from "@/lib/diary-entry-timer-service";
 import { startFollowUpService, stopFollowUpService } from "@/lib/follow-up-service";
@@ -996,6 +1000,32 @@ export function DesktopShell({ initialThemeProfile, initialThemeAssets }: Deskto
   useEffect(() => {
     activeAppRef.current = activeApp;
   }, [activeApp]);
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") return undefined;
+
+    let listener: { remove: () => Promise<void> } | null = null;
+    let disposed = false;
+    void CapApp.addListener("backButton", () => {
+      const action = resolveAndroidBackAction(activeAppRef.current);
+      if (action === "close-active-app") {
+        musicOverlayControllerRef.current?.closeFullPlayer();
+        setActiveApp(null);
+        return;
+      }
+      void CapApp.minimizeApp();
+    }).then((handle) => {
+      if (disposed) {
+        void handle.remove();
+        return;
+      }
+      listener = handle;
+    });
+
+    return () => {
+      disposed = true;
+      if (listener) void listener.remove();
+    };
+  }, []);
   // Listen for theme CSS updates from 小卷
   useEffect(() => {
     const onThemeUpdate = () => {

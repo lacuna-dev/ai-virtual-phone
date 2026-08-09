@@ -6,7 +6,9 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const isWindows = process.platform === "win32";
 const isWslUncPath = projectRoot.startsWith("\\\\wsl$\\");
 const isGitHubPages = process.env.GITHUB_PAGES === "true";
-const pagesBasePath = process.env.NEXT_PUBLIC_BASE_PATH || "/ai-virtual-phone";
+const isAndroidBundle = process.env.ANDROID_BUNDLE === "true";
+const isStaticExport = isGitHubPages || isAndroidBundle;
+const staticBasePath = isAndroidBundle ? "" : (process.env.NEXT_PUBLIC_BASE_PATH ?? "/ai-virtual-phone");
 
 function resolveDistDir() {
   if (process.env.NEXT_DIST_DIR) return process.env.NEXT_DIST_DIR;
@@ -26,11 +28,11 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  ...(isGitHubPages
+  ...(isStaticExport
     ? {
         output: "export",
         trailingSlash: true,
-        basePath: pagesBasePath,
+        ...(staticBasePath ? { basePath: staticBasePath } : {}),
         images: { unoptimized: true },
       }
     : {
