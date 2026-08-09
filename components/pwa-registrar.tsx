@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export function PWARegistrar() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;
@@ -10,7 +12,8 @@ export function PWARegistrar() {
     let cancelled = false;
     const register = () => {
       if (cancelled) return;
-      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch((error) => {
+      const scope = `${basePath || ""}/`;
+      navigator.serviceWorker.register(`${basePath}/sw.js`, { scope }).catch((error) => {
         console.warn("[PWA] Service worker registration failed:", error);
       });
     };

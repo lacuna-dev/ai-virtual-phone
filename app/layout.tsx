@@ -20,6 +20,8 @@ export const metadata: Metadata = {
   description: "float",
 };
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export default function RootLayout({
   children
 }: Readonly<{
@@ -28,10 +30,10 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <head>
-        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="manifest" href={`${basePath}/manifest.webmanifest`} />
         <meta name="theme-color" content="#f8f7f2" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
-        <link rel="icon" href="/icon-192.png" type="image/png" />
+        <link rel="apple-touch-icon" href={`${basePath}/icon-192.png`} />
+        <link rel="icon" href={`${basePath}/icon-192.png`} type="image/png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="float" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

@@ -1,12 +1,16 @@
-const CACHE_VERSION = "ai-phone-pwa-v4";
+const CACHE_VERSION = "ai-phone-pwa-v5-pages";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
+const scopeUrl = new URL(self.registration.scope);
+const ROOT_PATH = scopeUrl.pathname.endsWith("/") ? scopeUrl.pathname : `${scopeUrl.pathname}/`;
+const scopedPath = (relative) => new URL(relative.replace(/^\//, ""), self.registration.scope).pathname;
+
 const PRECACHE_URLS = [
-  "/",
-  "/manifest.json",
-  "/icon-192.png",
-  "/icon-512.png",
+  ROOT_PATH,
+  scopedPath("manifest.webmanifest"),
+  scopedPath("icon-192.png"),
+  scopedPath("icon-512.png"),
 ];
 
 self.addEventListener("install", (event) => {
@@ -25,10 +29,8 @@ self.addEventListener("activate", (event) => {
           .filter((key) => !key.startsWith(CACHE_VERSION))
           .map((key) => caches.delete(key))
       ))
-      // 刷新预缓存的 "/" 快照：它是离线导航的最终兜底，若停留在旧部署版本，
-      // 引用的旧 hash CSS/JS 已 404，会渲染出无样式页面（文字堆在左上角）。
       .then(() => caches.open(STATIC_CACHE))
-      .then((cache) => cache.add(new Request("/", { cache: "reload" })).catch(() => {}))
+      .then((cache) => cache.add(new Request(ROOT_PATH, { cache: "reload" })).catch(() => {}))
       .then(() => self.clients.claim())
   );
 });
@@ -37,8 +39,8 @@ function isCacheableRequest(request) {
   if (request.method !== "GET") return false;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return false;
-  if (url.pathname.startsWith("/api/")) return false;
-  if (url.pathname.startsWith("/_next/static/")) return true;
+  if (url.pathname.includes("/api/")) return false;
+  if (url.pathname.includes("/_next/static/")) return true;
   return ["font", "image", "script", "style", "worker"].includes(request.destination);
 }
 
@@ -51,16 +53,12 @@ async function networkFirst(request) {
   } catch (error) {
     const cached = await cache.match(request);
     if (cached) return cached;
-    const fallback = await caches.match("/");
+    const fallback = await caches.match(ROOT_PATH);
     if (fallback) return fallback;
     throw error;
   }
 }
 
-// 静态资源（字体/图片/脚本/样式/模型）用 cache-first：命中缓存直接返回，
-// 不再每次都在后台把整份文件重新拉一遍校验。字体动辄 7~24MB，旧的
-// stale-while-revalidate 会持续重下，是带宽爆掉的主因之一。
-// 需要更新缓存内容时，升 CACHE_VERSION 即可让旧缓存在 activate 时清空。
 async function cacheFirst(request) {
   const cache = await caches.open(RUNTIME_CACHE);
   const cached = await cache.match(request);
@@ -77,7 +75,7 @@ self.addEventListener("notificationclick", (event) => {
       for (const client of clients) {
         if ("focus" in client) return client.focus();
       }
-      return self.clients.openWindow("/");
+      return self.clients.openWindow(ROOT_PATH);
     })
   );
 });
